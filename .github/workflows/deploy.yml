@@ -64,7 +64,7 @@ jobs:
       - name: Configurar App Settings do Azure Web App
         run: |
           az webapp config appsettings set --resource-group $AZURE_RESOURCE_GROUP --name $APP_NAME --settings \
-            'DATABASE_URL=${{ secrets.DATABASE_URL }}'
+            'DATABASE_URL=${{ secrets.DATABASE_URL }}' \
             'PORT=${{ secrets.PORT }}'
         # Define as configurações de ambiente do aplicativo no Azure (equivalentes a variáveis de ambiente no contêiner).
       
