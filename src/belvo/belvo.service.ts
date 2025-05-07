@@ -1,7 +1,11 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import belvo from 'belvo';
-import { BelvoClient, BelvoConfig } from './interfaces/belvo.interface';
+import {
+  BelvoClient,
+  BelvoConfig,
+  BelvoApiError,
+} from './interfaces/belvo.interface';
 import {
   BelvoAuthenticationError,
   BelvoConnectionError,
@@ -61,16 +65,15 @@ export class BelvoService implements OnModuleInit {
       this.logger.log('Connected to Belvo API');
     } catch (error) {
       this.logger.error('Error connecting to Belvo API:', error);
-      
-      if (error.response?.status === 401) {
+      const belvoError = error as BelvoApiError;
+
+      if (belvoError.response?.status === 401) {
         throw new BelvoAuthenticationError(
           'Credenciais inválidas. Verifique BELVO_ID e BELVO_PASSWORD',
         );
       }
-      
-      throw new BelvoConnectionError(
-        error instanceof Error ? error.message : 'Unknown error',
-      );
+
+      throw new BelvoConnectionError(belvoError.message || 'Unknown error');
     }
   }
 
@@ -92,15 +95,20 @@ export class BelvoService implements OnModuleInit {
       return token.access;
     } catch (error) {
       this.logger.error('Error generating widget token:', error);
-      
-      if (error instanceof BelvoAuthenticationError || 
-          error instanceof BelvoConnectionError ||
-          error instanceof BelvoWidgetTokenError) {
+      const belvoError = error as BelvoApiError;
+
+      if (
+        error instanceof BelvoAuthenticationError ||
+        error instanceof BelvoConnectionError ||
+        error instanceof BelvoWidgetTokenError
+      ) {
         throw error;
       }
-      
+
       throw new BelvoWidgetTokenError(
-        error instanceof Error ? error.message : 'Unknown error',
+        belvoError.response?.data?.detail ||
+          belvoError.message ||
+          'Unknown error',
       );
     }
   }

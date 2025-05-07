@@ -24,3 +24,17 @@ export interface BelvoWidgetToken {
   access: string;
   refresh?: string;
 }
+
+/**
+ * Interface para erro da API Belvo
+ */
+export interface BelvoApiError {
+  response?: {
+    status: number;
+    data?: {
+      detail?: string;
+      code?: string;
+    };
+  };
+  message?: string;
+}
