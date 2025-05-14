@@ -30,9 +30,9 @@ async function bootstrap() {
   const port = process.env.PORT || 3003;
   await app.listen(port);
 
-  console.log(`Application is running on: ${await app.getUrl()}`);
+  console.log(`Application is running on: http://localhost:${port}`);
   console.log(
-    `Swagger documentation is available at: ${await app.getUrl()}/docs`,
+    `Swagger documentation is available at: http://localhost:${port}/docs`,
   );
 }
 // Executa o bootstrap com tratamento de erros
