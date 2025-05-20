@@ -1,10 +1,12 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Post, Body } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { BelvoService } from './belvo.service';
 import {
   WidgetTokenResponseDto,
   WidgetTokenErrorResponseDto,
-} from './dto/widget-token.dto';
+  LinkAccountRequestDto,
+  LinkAccountResponseDto,
+} from './dto';
 
 @ApiTags('Belvo Integration')
 @Controller('belvo')
@@ -34,5 +36,36 @@ export class BelvoController {
   async getWidgetToken(): Promise<WidgetTokenResponseDto> {
     const token = await this.belvoService.generateWidgetToken();
     return new WidgetTokenResponseDto(token);
+  }
+
+  @Post('link-account')
+  @ApiOperation({
+    summary: 'Vincular conta bancária',
+    description: 'Vincula uma conta bancária ao usuário usando o Belvo',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Conta vinculada com sucesso',
+    type: LinkAccountResponseDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Link não encontrado no Belvo',
+    type: WidgetTokenErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Link já registrado para outro usuário',
+    type: WidgetTokenErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Erro interno ao vincular conta',
+    type: WidgetTokenErrorResponseDto,
+  })
+  async linkAccount(
+    @Body() data: LinkAccountRequestDto,
+  ): Promise<LinkAccountResponseDto> {
+    return this.belvoService.linkAccount(data);
   }
 }

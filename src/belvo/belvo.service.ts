@@ -1,4 +1,5 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { DatabaseService } from '../database/database.service';
 import { ConfigService } from '@nestjs/config';
 import belvo from 'belvo';
 import {
@@ -11,6 +12,11 @@ import {
   BelvoConnectionError,
   BelvoWidgetTokenError,
 } from './errors/belvo.errors';
+import {
+  BelvoLinkNotFoundError,
+  BelvoLinkAlreadyExistsError,
+} from './errors/link-account.errors';
+import { LinkAccountRequestDto } from './dto';
 
 @Injectable()
 export class BelvoService implements OnModuleInit {
@@ -19,7 +25,10 @@ export class BelvoService implements OnModuleInit {
   private readonly logger = new Logger(BelvoService.name);
   private readonly config: BelvoConfig;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly database: DatabaseService,
+  ) {
     this.config = {
       id: this.configService.getOrThrow<string>('BELVO_ID'),
       password: this.configService.getOrThrow<string>('BELVO_PASSWORD'),
@@ -74,6 +83,59 @@ export class BelvoService implements OnModuleInit {
       }
 
       throw new BelvoConnectionError(belvoError.message || 'Unknown error');
+    }
+  }
+
+  async linkAccount(data: LinkAccountRequestDto) {
+    try {
+      if (!this.isConnected) {
+        await this.connect();
+      }
+
+      this.logger.log('Verificando existência do link no Belvo...', {
+        linkId: data.linkId,
+      });
+
+      // Verifica se o link já está registrado
+      const existingLink = await this.database.belvoAccount.findUnique({
+        where: {
+          linkId: data.linkId,
+        },
+      });
+
+      if (existingLink) {
+        this.logger.error('Link já registrado', {
+          linkId: data.linkId,
+        });
+        throw new BelvoLinkAlreadyExistsError(
+          'Link já registrado para outro usuário',
+        );
+      }
+
+      // Cria o registro no banco
+      this.logger.log('Criando registro de conta...', data);
+      const account = await this.database.belvoAccount.create({
+        data: {
+          userId: data.userId,
+          linkId: data.linkId,
+          institutionName: data.institutionName,
+        },
+      });
+
+      this.logger.log('Conta vinculada com sucesso', { accountId: account.id });
+      return account;
+    } catch (error) {
+      if (
+        error instanceof BelvoLinkNotFoundError ||
+        error instanceof BelvoLinkAlreadyExistsError
+      ) {
+        throw error;
+      }
+
+      this.logger.error('Erro ao vincular conta', { error });
+      throw new BelvoConnectionError(
+        error instanceof Error ? error.message : 'Unknown error',
+      );
     }
   }
 

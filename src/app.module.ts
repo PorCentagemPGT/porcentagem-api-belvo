@@ -3,6 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import { BelvoModule } from './belvo/belvo.module';
+import { DatabaseModule } from './database/database.module';
 import * as path from 'path';
 
 @Module({
@@ -12,7 +13,7 @@ import * as path from 'path';
       envFilePath: path.resolve(process.cwd(), '.env'),
       cache: false,
       validate: (config: Record<string, unknown>) => {
-        const required = ['BELVO_ID', 'BELVO_PASSWORD'];
+        const required = ['BELVO_ID', 'BELVO_PASSWORD', 'DATABASE_URL'];
         const missing = required.filter((key) => !config[key]);
 
         if (missing.length > 0) {
@@ -24,6 +25,7 @@ import * as path from 'path';
       },
     }),
     BelvoModule,
+    DatabaseModule,
   ],
   controllers: [AppController],
   providers: [AppService],
