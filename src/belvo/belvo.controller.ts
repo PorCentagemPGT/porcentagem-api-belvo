@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { BelvoService } from './belvo.service';
 import {
@@ -6,6 +6,10 @@ import {
   WidgetTokenErrorResponseDto,
   LinkAccountRequestDto,
   LinkAccountResponseDto,
+  ListAccountsRequestDto,
+  ListAccountsResponseDto,
+  ListTransactionsRequestDto,
+  ListTransactionsResponseDto,
 } from './dto';
 
 @ApiTags('Belvo Integration')
@@ -67,5 +71,55 @@ export class BelvoController {
     @Body() data: LinkAccountRequestDto,
   ): Promise<LinkAccountResponseDto> {
     return this.belvoService.linkAccount(data);
+  }
+
+  @Get('accounts')
+  @ApiOperation({
+    summary: 'Listar contas bancárias',
+    description:
+      'Lista todas as contas bancárias vinculadas a um link específico',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Contas listadas com sucesso',
+    type: [ListAccountsResponseDto],
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Link não encontrado',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Erro interno ao listar contas',
+  })
+  async listAccounts(
+    @Query() data: ListAccountsRequestDto,
+  ): Promise<ListAccountsResponseDto[]> {
+    return this.belvoService.listAccounts(data);
+  }
+
+  @Get('transactions')
+  @ApiOperation({
+    summary: 'Listar transações bancárias',
+    description:
+      'Lista todas as transações bancárias de um link específico, com opção de filtro por data',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Transações listadas com sucesso',
+    type: [ListTransactionsResponseDto],
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Link não encontrado',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Erro interno ao listar transações',
+  })
+  async listTransactions(
+    @Query() data: ListTransactionsRequestDto,
+  ): Promise<ListTransactionsResponseDto[]> {
+    return this.belvoService.listTransactions(data);
   }
 }

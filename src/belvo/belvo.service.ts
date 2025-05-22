@@ -16,7 +16,13 @@ import {
   BelvoLinkNotFoundError,
   BelvoLinkAlreadyExistsError,
 } from './errors/link-account.errors';
-import { LinkAccountRequestDto } from './dto';
+import {
+  LinkAccountRequestDto,
+  ListAccountsRequestDto,
+  ListAccountsResponseDto,
+  ListTransactionsRequestDto,
+  ListTransactionsResponseDto,
+} from './dto';
 
 @Injectable()
 export class BelvoService implements OnModuleInit {
@@ -172,6 +178,85 @@ export class BelvoService implements OnModuleInit {
           belvoError.message ||
           'Unknown error',
       );
+    }
+  }
+
+  async listAccounts(
+    data: ListAccountsRequestDto,
+  ): Promise<ListAccountsResponseDto[]> {
+    try {
+      this.logger.log(`Listing accounts for link ${data.linkId}`);
+
+      if (!this.isConnected) {
+        await this.connect();
+      }
+
+      const accounts = await this.client.accounts.list({
+        link: data.linkId,
+      });
+
+      this.logger.debug(`Accounts response: ${JSON.stringify(accounts)}`);
+
+      return accounts.map((account) => new ListAccountsResponseDto(account));
+    } catch (error) {
+      this.logger.error('Error listing accounts:', error);
+
+      if ((error as BelvoApiError).statusCode === 404) {
+        throw new BelvoLinkNotFoundError('Link não encontrado');
+      }
+
+      throw error;
+    }
+  }
+
+  async listTransactions(
+    data: ListTransactionsRequestDto,
+  ): Promise<ListTransactionsResponseDto[]> {
+    try {
+      this.logger.log(`Listing transactions for link ${data.linkId}`);
+
+      if (!this.isConnected) {
+        await this.connect();
+      }
+
+      const filters: {
+        link: string;
+        account: string;
+        date_from?: string;
+        date_to?: string;
+      } = {
+        link: data.linkId,
+        account: '0c7a70e1-e4bb-4e32-9602-83ce9d9f6a20',
+      };
+
+      if (data.dateFrom) {
+        filters.date_from = data.dateFrom;
+      }
+
+      if (data.dateTo) {
+        filters.date_to = data.dateTo;
+      }
+
+      const transactions = await this.client.transactions.list({
+        limit: 100,
+        filters,
+      });
+
+      this.logger.debug(
+        `Transactions response: ${JSON.stringify(transactions)}`,
+      );
+
+      return transactions.map(
+        (transaction) => new ListTransactionsResponseDto(transaction),
+      );
+    } catch (error) {
+      this.logger.error('Error listing transactions:', error);
+
+      if ((error as BelvoApiError).statusCode === 404) {
+        throw new BelvoLinkNotFoundError('Link não encontrado');
+      }
+
+      throw error;
     }
   }
 }
