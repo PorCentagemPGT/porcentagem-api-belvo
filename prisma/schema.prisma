@@ -13,10 +13,24 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model BelvoAccount {
+model LinkBank {
   id              String   @id @default(uuid())
-  userId          String   // ID do usuário no auth-api
+  userId          String // ID do usuário no auth-api
   linkId          String   @unique // ID retornado pelo Belvo
+  institutionName String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Índices para performance
+  @@index([userId])
+  @@index([linkId])
+}
+
+model BankAccount {
+  id              String   @id @default(uuid())
+  userId          String // ID do usuário no auth-api
+  linkId          String   @unique // ID retornado pelo Belvo
+  bankAccountId   String   @unique // ID retornado pelo Belvo
   institutionName String
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt

@@ -10,23 +10,15 @@ import {
 import {
   BelvoAuthenticationError,
   BelvoConnectionError,
-  BelvoWidgetTokenError,
 } from './errors/belvo.errors';
-import {
-  BelvoLinkNotFoundError,
-  BelvoLinkAlreadyExistsError,
-} from './errors/link-account.errors';
-import {
-  LinkAccountRequestDto,
-  ListAccountsRequestDto,
-  ListAccountsResponseDto,
-  ListTransactionsRequestDto,
-  ListTransactionsResponseDto,
-} from './dto';
 
 @Injectable()
 export class BelvoService implements OnModuleInit {
-  private client: BelvoClient;
+  private _client: BelvoClient;
+
+  get client(): BelvoClient {
+    return this._client;
+  }
   private isConnected = false;
   private readonly logger = new Logger(BelvoService.name);
   private readonly config: BelvoConfig;
@@ -48,7 +40,7 @@ export class BelvoService implements OnModuleInit {
         : 'https://api.belvo.com';
 
     this.logger.log('Initializing Belvo client...');
-    this.client = new belvo(
+    this._client = new belvo(
       this.config.id,
       this.config.password,
       envUrl,
@@ -89,174 +81,6 @@ export class BelvoService implements OnModuleInit {
       }
 
       throw new BelvoConnectionError(belvoError.message || 'Unknown error');
-    }
-  }
-
-  async linkAccount(data: LinkAccountRequestDto) {
-    try {
-      if (!this.isConnected) {
-        await this.connect();
-      }
-
-      this.logger.log('Verificando existência do link no Belvo...', {
-        linkId: data.linkId,
-      });
-
-      // Verifica se o link já está registrado
-      const existingLink = await this.database.belvoAccount.findUnique({
-        where: {
-          linkId: data.linkId,
-        },
-      });
-
-      if (existingLink) {
-        this.logger.error('Link já registrado', {
-          linkId: data.linkId,
-        });
-        throw new BelvoLinkAlreadyExistsError(
-          'Link já registrado para outro usuário',
-        );
-      }
-
-      // Cria o registro no banco
-      this.logger.log('Criando registro de conta...', data);
-      const account = await this.database.belvoAccount.create({
-        data: {
-          userId: data.userId,
-          linkId: data.linkId,
-          institutionName: data.institutionName,
-        },
-      });
-
-      this.logger.log('Conta vinculada com sucesso', { accountId: account.id });
-      return account;
-    } catch (error) {
-      if (
-        error instanceof BelvoLinkNotFoundError ||
-        error instanceof BelvoLinkAlreadyExistsError
-      ) {
-        throw error;
-      }
-
-      this.logger.error('Erro ao vincular conta', { error });
-      throw new BelvoConnectionError(
-        error instanceof Error ? error.message : 'Unknown error',
-      );
-    }
-  }
-
-  async generateWidgetToken(): Promise<string> {
-    try {
-      if (!this.isConnected) {
-        await this.connect();
-      }
-
-      this.logger.log('Generating widget token...');
-      const token = await this.client.widgetToken.create();
-
-      if (!token?.access) {
-        throw new BelvoWidgetTokenError('Token inválido retornado pela API');
-      }
-
-      this.logger.log('Widget token generated successfully');
-
-      return token.access;
-    } catch (error) {
-      this.logger.error('Error generating widget token:', error);
-      const belvoError = error as BelvoApiError;
-
-      if (
-        error instanceof BelvoAuthenticationError ||
-        error instanceof BelvoConnectionError ||
-        error instanceof BelvoWidgetTokenError
-      ) {
-        throw error;
-      }
-
-      throw new BelvoWidgetTokenError(
-        belvoError.response?.data?.detail ||
-          belvoError.message ||
-          'Unknown error',
-      );
-    }
-  }
-
-  async listAccounts(
-    data: ListAccountsRequestDto,
-  ): Promise<ListAccountsResponseDto[]> {
-    try {
-      this.logger.log(`Listing accounts for link ${data.linkId}`);
-
-      if (!this.isConnected) {
-        await this.connect();
-      }
-
-      const accounts = await this.client.accounts.list({
-        link: data.linkId,
-      });
-
-      this.logger.debug(`Accounts response: ${JSON.stringify(accounts)}`);
-
-      return accounts.map((account) => new ListAccountsResponseDto(account));
-    } catch (error) {
-      this.logger.error('Error listing accounts:', error);
-
-      if ((error as BelvoApiError).statusCode === 404) {
-        throw new BelvoLinkNotFoundError('Link não encontrado');
-      }
-
-      throw error;
-    }
-  }
-
-  async listTransactions(
-    data: ListTransactionsRequestDto,
-  ): Promise<ListTransactionsResponseDto[]> {
-    try {
-      this.logger.log(`Listing transactions for link ${data.linkId}`);
-
-      if (!this.isConnected) {
-        await this.connect();
-      }
-
-      const filters: {
-        link: string;
-        account: string;
-        date_from?: string;
-        date_to?: string;
-      } = {
-        link: data.linkId,
-        account: '0c7a70e1-e4bb-4e32-9602-83ce9d9f6a20',
-      };
-
-      if (data.dateFrom) {
-        filters.date_from = data.dateFrom;
-      }
-
-      if (data.dateTo) {
-        filters.date_to = data.dateTo;
-      }
-
-      const transactions = await this.client.transactions.list({
-        limit: 100,
-        filters,
-      });
-
-      this.logger.debug(
-        `Transactions response: ${JSON.stringify(transactions)}`,
-      );
-
-      return transactions.map(
-        (transaction) => new ListTransactionsResponseDto(transaction),
-      );
-    } catch (error) {
-      this.logger.error('Error listing transactions:', error);
-
-      if ((error as BelvoApiError).statusCode === 404) {
-        throw new BelvoLinkNotFoundError('Link não encontrado');
-      }
-
-      throw error;
     }
   }
 }

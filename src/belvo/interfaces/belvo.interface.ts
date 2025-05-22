@@ -52,7 +52,6 @@ export interface BelvoClient {
       limit?: number;
       filters: {
         link: string;
-        account: string;
         date_from?: string;
         date_to?: string;
       };

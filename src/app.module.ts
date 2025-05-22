@@ -3,11 +3,17 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import { BelvoModule } from './belvo/belvo.module';
+import { AccountsModule } from './accounts/accounts.module';
+import { TransactionsModule } from './transactions/transactions.module';
+import { WidgetModule } from './widget/widget.module';
 import { DatabaseModule } from './database/database.module';
 import * as path from 'path';
 
 @Module({
   imports: [
+    AccountsModule,
+    TransactionsModule,
+    WidgetModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: path.resolve(process.cwd(), '.env'),
