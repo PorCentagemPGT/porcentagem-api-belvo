@@ -55,7 +55,7 @@ export class AccountsController {
   })
   async listLinkedAccounts(
     @Param('userId') userId: string,
-  ): Promise<LinkBankResponseDto[]> {
+  ): Promise<{ data: LinkBankResponseDto[] }> {
     return this.accountsService.listAllLinkBankByUserId(userId);
   }
 
@@ -75,7 +75,7 @@ export class AccountsController {
   })
   async registerBankAccount(
     @Body() data: BankAccountRequestDto,
-  ): Promise<BankAccountResponseDto> {
+  ): Promise<{ data: BankAccountResponseDto }> {
     return this.accountsService.createBankAccount(data);
   }
 
@@ -116,7 +116,7 @@ export class AccountsController {
   })
   async listBelvoAccounts(
     @Param('linkId') linkId: string,
-  ): Promise<ListBelvoAccountsResponseDto[]> {
+  ): Promise<{ data: ListBelvoAccountsResponseDto[] }> {
     const request: ListBelvoAccountsRequestDto = { linkId };
     return this.accountsService.listAllBelvoBankAccountsByLinkId(request);
   }

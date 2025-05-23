@@ -28,7 +28,7 @@ export class AccountsService {
 
   async listAllBelvoBankAccountsByLinkId(
     data: ListBelvoAccountsRequestDto,
-  ): Promise<ListBelvoAccountsResponseDto[]> {
+  ): Promise<{ data: ListBelvoAccountsResponseDto[] }> {
     try {
       this.logger.log(`Listing accounts for link ${data.linkId}`);
 
@@ -38,9 +38,24 @@ export class AccountsService {
 
       this.logger.debug(`Accounts response: ${JSON.stringify(accounts)}`);
 
-      return accounts.map(
-        (account) => new ListBelvoAccountsResponseDto(account),
+      const allowedCategories = [
+        'CREDIT_CARD',
+        'LOAN_ACCOUNT',
+        'CHECKING_ACCOUNT',
+      ];
+      const filteredAccounts = accounts.filter((account) =>
+        allowedCategories.includes(account.category),
       );
+
+      this.logger.debug(
+        `Filtered accounts: ${JSON.stringify(filteredAccounts)}`,
+      );
+
+      return {
+        data: filteredAccounts.map(
+          (account) => new ListBelvoAccountsResponseDto(account),
+        ),
+      };
     } catch (error) {
       this.logger.error('Error listing accounts:', error);
 
@@ -96,7 +111,7 @@ export class AccountsService {
 
   async listAllLinkBankByUserId(
     userId: string,
-  ): Promise<LinkBankResponseDto[]> {
+  ): Promise<{ data: LinkBankResponseDto[] }> {
     try {
       this.logger.log(`Reading account for user ${userId}`);
 
@@ -108,7 +123,7 @@ export class AccountsService {
 
       this.logger.debug(`Account response: ${JSON.stringify(accounts)}`);
 
-      return accounts;
+      return { data: accounts };
     } catch (error) {
       this.logger.error('Error reading account:', error);
 
@@ -138,7 +153,7 @@ export class AccountsService {
 
   async createBankAccount(
     data: BankAccountRequestDto,
-  ): Promise<BankAccountResponseDto> {
+  ): Promise<{ data: BankAccountResponseDto }> {
     try {
       this.logger.log(`Creating account for link ${data.linkId}`);
 
@@ -153,7 +168,7 @@ export class AccountsService {
 
       this.logger.debug(`Account response: ${JSON.stringify(account)}`);
 
-      return account;
+      return { data: account };
     } catch (error) {
       this.logger.error('Error creating account:', error);
 
