@@ -23,7 +23,7 @@ export class WidgetController {
     status: 500,
     description: 'Erro ao gerar token',
   })
-  async getWidgetToken(): Promise<WidgetTokenResponseDto> {
+  async getWidgetToken(): Promise<{ token: string }> {
     return this.widgetService.getWidgetToken();
   }
 }

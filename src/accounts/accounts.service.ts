@@ -1,12 +1,21 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { BelvoService } from '../belvo/belvo.service';
-import { ListAccountsRequestDto, ListAccountsResponseDto } from './dto';
+import {
+  LinkBankRequestDto,
+  LinkBankResponseDto,
+  ListBelvoAccountsRequestDto,
+  ListBelvoAccountsResponseDto,
+} from './dto';
 import {
   BelvoLinkAlreadyExistsError,
   BelvoLinkNotFoundError,
 } from '../belvo/errors/link-account.errors';
 import { BelvoApiError } from '../belvo/interfaces/belvo.interface';
 import { DatabaseService } from 'src/database/database.service';
+import {
+  BankAccountRequestDto,
+  BankAccountResponseDto,
+} from './dto/bank-account.dto';
 
 @Injectable()
 export class AccountsService {
@@ -18,8 +27,8 @@ export class AccountsService {
   ) {}
 
   async listAllBelvoBankAccountsByLinkId(
-    data: ListAccountsRequestDto,
-  ): Promise<ListAccountsResponseDto[]> {
+    data: ListBelvoAccountsRequestDto,
+  ): Promise<ListBelvoAccountsResponseDto[]> {
     try {
       this.logger.log(`Listing accounts for link ${data.linkId}`);
 
@@ -29,7 +38,9 @@ export class AccountsService {
 
       this.logger.debug(`Accounts response: ${JSON.stringify(accounts)}`);
 
-      return accounts.map((account) => new ListAccountsResponseDto(account));
+      return accounts.map(
+        (account) => new ListBelvoAccountsResponseDto(account),
+      );
     } catch (error) {
       this.logger.error('Error listing accounts:', error);
 
@@ -41,7 +52,7 @@ export class AccountsService {
     }
   }
 
-  async createLinkBank(data: ListAccountsRequestDto) {
+  async createLinkBank(data: LinkBankRequestDto) {
     // Verifica se o link já está registrado
     const existingLink = await this.database.linkBank.findUnique({
       where: {
@@ -71,7 +82,7 @@ export class AccountsService {
 
       this.logger.debug(`Account response: ${JSON.stringify(account)}`);
 
-      return account;
+      return { data: account };
     } catch (error) {
       this.logger.error('Error creating account:', error);
 
@@ -83,7 +94,9 @@ export class AccountsService {
     }
   }
 
-  async listAllLinkBankByUserId(userId: string) {
+  async listAllLinkBankByUserId(
+    userId: string,
+  ): Promise<LinkBankResponseDto[]> {
     try {
       this.logger.log(`Reading account for user ${userId}`);
 
@@ -123,7 +136,9 @@ export class AccountsService {
     }
   }
 
-  async createBankAccount(data: ListAccountsRequestDto) {
+  async createBankAccount(
+    data: BankAccountRequestDto,
+  ): Promise<BankAccountResponseDto> {
     try {
       this.logger.log(`Creating account for link ${data.linkId}`);
 
