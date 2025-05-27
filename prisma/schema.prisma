@@ -26,14 +26,23 @@ model LinkBank {
   @@index([linkId])
 }
 
+enum AccountStatus {
+  enabled
+  disabled
+}
+
 model BankAccount {
-  id              String   @id @default(uuid())
-  userId          String // ID do usuário no auth-api
-  linkId          String   @unique // ID retornado pelo Belvo
-  bankAccountId   String   @unique // ID retornado pelo Belvo
-  institutionName String
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id            String        @id @default(uuid())
+  userId        String        // ID do usuário no auth-api
+  linkId        String        // ID retornado pelo Belvo
+  bankAccountId String        @unique // ID retornado pelo Belvo
+  category      String        // Ex: CREDIT_CARD
+  type          String        // Ex: Contas
+  number        String        // Ex: 4835 None5744
+  name          String        // Ex: Cartão crédito visa gold
+  status        AccountStatus @default(disabled)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
   // Índices para performance
   @@index([userId])
